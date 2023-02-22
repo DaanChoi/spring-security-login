@@ -1,7 +1,5 @@
-# spring-security-login
-Spring Security를 사용한 일반 회원 가입 및 로그인
+# :books: Spring Security + JWT
 
-# Spring Security + JWT
-## 기본 동작 과정
+## :pushpin: 기본 동작 과정 & 재발급 과정
+![KakaoTalk_20230223_000449147](https://user-images.githubusercontent.com/104367835/220662505-740891fb-c762-47f4-ac4f-012d0c10fb5b.jpg)
 
-## 토큰 재발급 과정
