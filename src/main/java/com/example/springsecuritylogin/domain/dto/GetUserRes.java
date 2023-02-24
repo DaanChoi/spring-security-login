@@ -7,14 +7,13 @@ import lombok.*;
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GetUserRes {
-    private Long userIdx;
-    private String email;
-    private String nickname;
+
+    private String uniqueId;
+    private String password;
 
     @Builder
     public GetUserRes(User user){
-        this.userIdx = user.getId();
-        this.email = user.getEmail();
-        this.nickname = user.getNickname();
+        this.uniqueId = user.getUniqueId();
+        this.password = user.getPassword();
     }
 }

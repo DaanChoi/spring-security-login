@@ -2,12 +2,17 @@ package com.example.springsecuritylogin.controller;
 
 import com.example.springsecuritylogin.config.BaseResponse;
 import com.example.springsecuritylogin.config.security.JwtTokenProvider;
+import com.example.springsecuritylogin.domain.Entity.RefreshToken;
 import com.example.springsecuritylogin.domain.Entity.User;
 import com.example.springsecuritylogin.domain.Role;
 import com.example.springsecuritylogin.domain.dto.GetUserRes;
+import com.example.springsecuritylogin.domain.dto.LoginResDto;
+import com.example.springsecuritylogin.domain.dto.TokenInfo;
 import com.example.springsecuritylogin.repository.LoginRepository;
+import com.example.springsecuritylogin.repository.TokenRepository;
 import com.example.springsecuritylogin.service.LoginService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.example.springsecuritylogin.config.BaseResponseStatus.*;
@@ -27,13 +31,17 @@ public class LoginController {
 
     final private LoginService loginService;
     final private LoginRepository loginRepository;
+    final private TokenRepository tokenRepository;
     final private JwtTokenProvider jwtTokenProvider;
     final private PasswordEncoder passwordEncoder;
 
-    public LoginController(LoginService loginService, LoginRepository loginRepository, JwtTokenProvider jwtTokenProvider,
+    public LoginController(LoginService loginService, LoginRepository loginRepository,
+                           TokenRepository tokenRepository,
+                           JwtTokenProvider jwtTokenProvider,
                            PasswordEncoder passwordEncoder) {
         this.loginService = loginService;
         this.loginRepository = loginRepository;
+        this.tokenRepository = tokenRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
     }
@@ -43,29 +51,25 @@ public class LoginController {
      */
     @PostMapping("/signup")
     public Long signup(@RequestBody Map<String, String> user) {
-        return loginRepository.save(User.builder()
-                .email(user.get("email"))
+        User userEntity = loginRepository.save(User.builder()
+                .uniqueId(user.get("uniqueId"))
                 .nickname(user.get("nickname"))
                 .password(passwordEncoder.encode(user.get("password")))
                 .role(Role.ROLE_USER)
-                .build()
-                ).getId();
+                .build());
+
+        return userEntity.getId();
+
     }
 
     /**
      * 로그인
      */
     @PostMapping("/login")
-    public String login(@RequestBody Map<String, String> user) {
-        // 해당 이메일을 가진 회원이 있는지 확인합니다.
-        User member = loginRepository.findByEmail(user.get("email"))
-                        .orElseThrow(() -> new IllegalArgumentException("가입 되지 않은 이메일입니다."));
-        // 입력받은 비번과 회원의 비번과 일치한지 확인합니다.
-        if(!passwordEncoder.matches(user.get("password"), member.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
-        }
-        // 해당 이메일의 회원이 존재하고 비밀번호도 일치한다면, JWT 를 생성합니다.
-        return jwtTokenProvider.createToken(member.getEmail(), member.getRole());
+    public ResponseEntity<?> login(@RequestBody Map<String, String> user) {
+        String uniqueId = user.get("uniqueId");
+        String password = user.get("password");
+        return ResponseEntity.ok(loginService.login(uniqueId, password));
     }
 
     /**
@@ -75,8 +79,8 @@ public class LoginController {
     public BaseResponse<List<GetUserRes>> getUsers() {
         try {
             List<GetUserRes> users = loginRepository.findAll().stream()
-                    .map(GetUserRes::new)
-                    .collect(Collectors.toList());
+                    .map(GetUserRes::new) // 스트림 내 요소들을 하나씩 특정 값으로 변환
+                    .collect(Collectors.toList()); // 스트림 객체를 리스트로 변환 ??
             log.info(loginRepository.findAll().toString());
             return new BaseResponse<>(users, GET_SUCCESS);
         } catch (Exception e) {
