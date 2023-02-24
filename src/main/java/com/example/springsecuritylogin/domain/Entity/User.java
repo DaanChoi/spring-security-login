@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-@ToString
+@ToString(exclude = "refreshTokens")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 //JPA 가 관리하는 객체입니다.

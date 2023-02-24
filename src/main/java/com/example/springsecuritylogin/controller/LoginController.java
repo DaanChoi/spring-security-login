@@ -14,11 +14,13 @@ import com.example.springsecuritylogin.service.LoginService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -67,24 +69,31 @@ public class LoginController {
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> user) {
-        String uniqueId = user.get("uniqueId");
-        String password = user.get("password");
-        return ResponseEntity.ok(loginService.login(uniqueId, password));
+        TokenInfo tokenInfo = loginService.login(user);
+        return ResponseEntity.ok(tokenInfo);
+    }
+
+    /**
+     * Access 토큰 재발급
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
+            bearerToken.substring(7);
+        }
+        return ResponseEntity.ok("");
     }
 
     /**
      * 회원 정보 조회
      */
     @GetMapping("/users")
-    public BaseResponse<List<GetUserRes>> getUsers() {
-        try {
-            List<GetUserRes> users = loginRepository.findAll().stream()
-                    .map(GetUserRes::new) // 스트림 내 요소들을 하나씩 특정 값으로 변환
-                    .collect(Collectors.toList()); // 스트림 객체를 리스트로 변환 ??
-            log.info(loginRepository.findAll().toString());
-            return new BaseResponse<>(users, GET_SUCCESS);
-        } catch (Exception e) {
-            return new BaseResponse<>(INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<?> getUsers() {
+        List<GetUserRes> users = loginRepository.findAll().stream()
+                                                .map(GetUserRes::new) // 스트림 내 요소들을 하나씩 특정 값으로 변환
+                                                .collect(Collectors.toList()); // 스트림 객체를 리스트로 변환 ??
+        log.info(loginRepository.findAll().toString());
+        return ResponseEntity.ok(users);
     }
 }

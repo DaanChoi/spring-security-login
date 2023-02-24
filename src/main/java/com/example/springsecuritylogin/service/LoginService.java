@@ -2,16 +2,16 @@ package com.example.springsecuritylogin.service;
 
 import com.example.springsecuritylogin.config.security.JwtTokenProvider;
 import com.example.springsecuritylogin.domain.Entity.RefreshToken;
-import com.example.springsecuritylogin.domain.dto.LoginResDto;
+import com.example.springsecuritylogin.domain.Entity.User;
 import com.example.springsecuritylogin.domain.dto.TokenInfo;
 import com.example.springsecuritylogin.repository.LoginRepository;
 import com.example.springsecuritylogin.repository.TokenRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 @Service
 @Transactional(readOnly = false)
@@ -20,36 +20,30 @@ public class LoginService {
 
     private final LoginRepository loginRepository;
     private final TokenRepository tokenRepository;
-    private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
-
-//    public LoginService(LoginRepository loginRepository, AuthenticationManagerBuilder authenticationManagerBuilder, JwtTokenProvider jwtTokenProvider) {
-//        this.loginRepository = loginRepository;
-//        this.authenticationManagerBuilder = authenticationManagerBuilder;
-//        this.jwtTokenProvider = jwtTokenProvider;
-//    }
-
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public LoginResDto login(String memberId, String password) {
-        // 1. Login ID/PW 를 기반으로 Authentication 객체 생성
-        // 이때 authentication 는 인증 여부를 확인하는 authenticated 값이 false
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(memberId, password); // 인자 => principal(주요한) :  / credentials(자격) :
+    public TokenInfo login(Map<String, String> user) {
+        User userEntity = loginRepository.findByUniqueId(user.get("uniqueId"))
+                .orElseThrow(() -> new IllegalArgumentException("가입 되지 않은 이메일입니다."));
+        if (!passwordEncoder.matches(user.get("password"), userEntity.getPassword())) {
+            throw new IllegalArgumentException("이메일 또는 비밀번호가 맞지 않습니다.");
+        }
 
-        // 2. 실제 검증 (사용자 비밀번호 체크)이 이루어지는 부분
-        // authenticate 매서드가 실행될 때 CustomUserDetailsService 에서 만든 loadUserByUsername 메서드가 실행
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        String accessToken = jwtTokenProvider.createAccessToken(userEntity.getUniqueId(), userEntity.getRole());
+        String refreshToken = jwtTokenProvider.createRefreshToken(userEntity.getUniqueId(), userEntity.getRole());
 
-        // 3. 인증 정보를 기반으로 JWT 토큰 생성
-        TokenInfo tokenInfo = jwtTokenProvider.generateToken(authentication);
-        
-        // 아직 인증되지 않은 Authentication 객체를 생성한 것(2)이고 추후 모든 인증이 완료되면 인증된 생성자로 Authentication 객체가 생성된다는 것(3)
-
-        Long refreshTokenId = tokenRepository.save(RefreshToken.builder()
-                .refreshToken(tokenInfo.getRefreshToken())
-                .user(loginRepository.findByUniqueId(memberId).get())
+        Long refreshTokenIndex = tokenRepository.save(RefreshToken.builder()
+                .refreshToken(refreshToken)
+                .user(loginRepository.findByUniqueId(userEntity.getUniqueId()).get())
                 .build()).getId();
-        return new LoginResDto(tokenInfo.getGrantType(), tokenInfo.getAccessToken(), refreshTokenId);
+
+        return new TokenInfo(accessToken, refreshTokenIndex);
     }
 
+    @Transactional
+    public TokenInfo refresh(String refreshToken) {
+        return new TokenInfo("", 1L);
+    }
 }
