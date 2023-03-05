@@ -1,6 +1,6 @@
-package com.example.springsecuritylogin.config.security;
+package com.example.springsecuritylogin.security;
 
-import com.example.springsecuritylogin.domain.Entity.User;
+import com.example.springsecuritylogin.domain.entity.User;
 import com.example.springsecuritylogin.repository.LoginRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

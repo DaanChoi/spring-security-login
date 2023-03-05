@@ -1,6 +1,7 @@
-package com.example.springsecuritylogin.config.security;
+package com.example.springsecuritylogin.jwt;
 
-import com.example.springsecuritylogin.domain.Role;
+import com.example.springsecuritylogin.security.SecurityUserDetailService;
+import com.example.springsecuritylogin.enums.Role;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

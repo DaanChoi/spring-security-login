@@ -1,4 +1,4 @@
-package com.example.springsecuritylogin.domain;
+package com.example.springsecuritylogin.domain.entity;
 
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;

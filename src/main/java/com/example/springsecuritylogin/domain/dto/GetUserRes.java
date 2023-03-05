@@ -1,6 +1,6 @@
 package com.example.springsecuritylogin.domain.dto;
 
-import com.example.springsecuritylogin.domain.Entity.User;
+import com.example.springsecuritylogin.domain.entity.User;
 import lombok.*;
 
 @Getter

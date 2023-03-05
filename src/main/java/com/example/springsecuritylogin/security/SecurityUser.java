@@ -1,6 +1,6 @@
-package com.example.springsecuritylogin.config.security;
+package com.example.springsecuritylogin.security;
 
-import com.example.springsecuritylogin.domain.Entity.User;
+import com.example.springsecuritylogin.domain.entity.User;
 import org.springframework.security.core.authority.AuthorityUtils;
 
 public class SecurityUser extends org.springframework.security.core.userdetails.User {
@@ -8,7 +8,7 @@ public class SecurityUser extends org.springframework.security.core.userdetails.
     private User user;
 
     public SecurityUser(User user) {
-        super(user.getId().toString(), user.getPassword(), AuthorityUtils.createAuthorityList(user.getRole().toString()));
+        super(user.getId().toString(), user.getPassword(), AuthorityUtils.createAuthorityList(user.getRoles().toString()));
         this.user = user;
     }
 
